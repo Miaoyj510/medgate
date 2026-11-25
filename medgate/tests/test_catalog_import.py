@@ -1,3 +1,5 @@
+import shutil
+import uuid
 from pathlib import Path
 
 import pytest
@@ -12,13 +14,20 @@ ALIASES = SEED_DIR / "catalog_aliases.csv"
 
 
 @pytest.fixture()
-def session(tmp_path, monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'catalog.db'}")
+def session(monkeypatch):
+    """用仓库内自建临时目录，避免依赖系统临时目录的写权限。"""
+    tmp_dir = Path(__file__).resolve().parent.parent / ".testtmp" / uuid.uuid4().hex
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_dir / 'catalog.db'}")
     config.get_settings.cache_clear()
     db.dispose_engine()
     db.init_db()
-    with db.session_scope() as s:
-        yield s
+    try:
+        with db.session_scope() as s:
+            yield s
+    finally:
+        db.dispose_engine()
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 def test_import_reports_counts_and_invalid_rows(session):

@@ -23,9 +23,4 @@ jobs:
       - name: 全量测试
         run: python -m pytest medgate/tests -q
       - name: 目录导入冒烟
-        run: |
-          mkdir -p medgate/data
-          export DATABASE_URL="sqlite:///./medgate/data/ci.db"
-          python -m medgate.cli init-db
-          python -m medgate.cli import-catalog --file medgate/seed/catalog_sample.csv
-          python -m medgate.cli catalog-stats
+        run: python scripts/smoke_catalog.py
