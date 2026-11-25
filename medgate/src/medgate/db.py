@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Iterator
 
 from sqlalchemy import create_engine, text
@@ -19,6 +20,23 @@ _engine: Engine | None = None
 _session_factory: sessionmaker[Session] | None = None
 
 
+def ensure_sqlite_dir(url: str) -> None:
+    """确保 SQLite 文件所在目录存在。
+
+    全新检出（或 CI）时 data/ 目录并不在版本库里，SQLite 会直接报
+    "unable to open database file"。这里在连接前把目录建出来。
+    """
+    if not url.startswith("sqlite"):
+        return
+    path_part = url.split("sqlite:///", 1)[-1]
+    if not path_part or path_part == ":memory:":
+        return
+    target = Path(path_part)
+    if not target.is_absolute():
+        target = Path.cwd() / target
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+
 def get_engine() -> Engine:
     """惰性创建引擎：导入模块不连库，测试与 CLI 才触发连接。"""
     global _engine
@@ -27,6 +45,7 @@ def get_engine() -> Engine:
         kwargs: dict[str, object] = {"pool_pre_ping": True, "future": True}
         if settings.is_sqlite:
             kwargs["connect_args"] = {"check_same_thread": False}
+            ensure_sqlite_dir(settings.database_url)
         _engine = create_engine(settings.database_url, **kwargs)  # type: ignore[arg-type]
     return _engine
 
