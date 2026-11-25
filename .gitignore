@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# 虚拟环境（每个 worktree 各自建，不入库）
+.venv/
+venv/
+
+# 本地配置与运行产物
+.env
+*.local
+data/
+medgate/data/
+logs/
+*.db
+*.log
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 独立 worktree 目录（不入库）
+医疗项目-review/
